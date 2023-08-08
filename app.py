@@ -15,7 +15,9 @@ df = df[(df['District Name'] == district) & (df['School Name'] == district)]
 years = df['year'].unique()
 
 # Create a list of all race/ethnicity categories
-races = df['Race/Ethnicity'].dropna().unique()
+races = ['White', 'African American/Black', 'Hispanic or Latino', 'Asian', 'Multi-race, non-Hispanic or Latino', 'American Indian or Alaskan Native',
+       'Native Hawaiian or Pacific Islander']
+mapped_colors = ['#FFD966', '#9DC3E6', '#C5E0B4', '#ED7D31', '#7030A0', '#8c564b', '#002060']
 
 # get dynamic column for selectbox
 categories = ['All', 'Students w/ Disabilities', 'English Learners', 'Low Income']
@@ -64,22 +66,13 @@ for tab, cat, cat_val in zip(tabs, categories, cat_values):
         disciplinary_rate['year'] = disciplinary_rate['year'].astype(str)
         print(disciplinary_rate.head())
         # Create a bar chart for all races across years
-        def my_theme():
-            return {
-                'config': {
-                'view': {'continuousHeight': 300, 'continuousWidth': 400},  # from the default theme
-                'range': {'category': ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2']}
-                }
-            }
-        alt.themes.register('my_theme', my_theme)
-        alt.themes.enable('my_theme')
         chart = alt.Chart(disciplinary_rate).mark_bar().encode(
             x=alt.X('Race/Ethnicity:O', axis=None),
             y='Disciplinary Rate',
             color=alt.Color(
                 'Race/Ethnicity:N',
                 scale=alt.Scale(
-                    range = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2'],
+                    range = mapped_colors,
                     domain = races
                 )
             ),
