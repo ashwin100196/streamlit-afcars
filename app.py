@@ -1,6 +1,8 @@
 import pandas as pd
 import streamlit as st
 import altair as alt
+import numpy as np
+from utils import get_filtered_counts, mapped_colors, races
 
 # Read in the data
 df = pd.read_csv("master.csv")
@@ -16,11 +18,6 @@ df['year'] = df['year'].apply(lambda y: str(y-1) + '-' + str(y)[2:])
 # Create a list of years
 years = df['year'].unique()
 
-# Create a list of all race/ethnicity categories
-races = ['White', 'African American/Black', 'Hispanic or Latino', 'Asian', 'Multi-race, non-Hispanic or Latino', 'American Indian or Alaskan Native',
-       'Native Hawaiian or Pacific Islander']
-mapped_colors = ['#FFD966', '#9DC3E6', '#C5E0B4', '#ED7D31', '#7030A0', '#8c564b', '#002060']
-
 # get dynamic column for selectbox
 categories = ['All', 'Students w/ Disabilities', 'English Learners', 'Low Income']
 cat_values = ['all', 'With Disability', 'English Learner', 'Low Income']
@@ -29,33 +26,6 @@ filter_cols = categories[1:]
 
 # Create tabs for each category 
 tabs = st.tabs(categories)
-
-def get_filtered_counts(group, filter_cols, attr, mode='one'):
-    try:
-        value = group.loc[group[filter_cols + ['Gender']].isnull().all(axis=1), attr]
-        if value.empty:
-            value = group.loc[group[filter_cols].isnull().all(axis=1), :]
-            # gender value for male
-            male_value = value.loc[value['Gender'] == 'Male', :]
-            if male_value.empty:
-                male_value = 0
-            else:
-                male_value = male_value[attr].values[0]
-            female_value = value.loc[value['Gender'] == 'Female', :]
-            if female_value.empty:
-                female_value = 0
-            else:
-                female_value = female_value[attr].values[0]
-            res = male_value + female_value
-        elif mode == 'one':
-            res = value.values[0]
-        elif mode == 'sum':
-            res = value.sum()
-        else:
-            raise AttributeError('Invalid mode')
-        return res
-    except Exception as e:
-        print(e)
 
 years_selected = st.sidebar.multiselect('Select years', years, default=years, key='year_select')
 df_filtered_years = df[df['year'].isin(years_selected)]
@@ -67,11 +37,17 @@ for tab, cat, cat_val in zip(tabs, categories, cat_values):
             categories_to_check = filter_cols
         else:
             categories_to_check = [col for col in filter_cols if col != cat]
+            df_non_filtered = df_filtered_years.copy()
+            df_non_filtered = df_non_filtered[df_non_filtered[cat].isnull()]
             df_filtered = df_filtered_years[df_filtered_years[cat]== cat_val]
-        disciplinary_rate = df_filtered.groupby(['Race/Ethnicity', 'year']).apply(lambda grp: get_filtered_counts(grp, categories_to_check, 'Total Disciplined'))/df_filtered.groupby(['Race/Ethnicity', 'year']).apply(lambda grp: get_filtered_counts(grp, categories_to_check, 'Total Eligible')) * 100
-        disciplinary_rate = disciplinary_rate.reset_index(name='Disciplinary Rate')
+        try:
+            num = df_filtered.groupby(['Race/Ethnicity', 'year']).apply(lambda grp: get_filtered_counts(grp, categories_to_check, 'Total Disciplined'))
+            denom = df_filtered.groupby(['Race/Ethnicity', 'year']).apply(lambda grp: get_filtered_counts(grp, categories_to_check, 'Total Eligible'))
+            disciplinary_rate = num/denom * 100
+            disciplinary_rate = disciplinary_rate.reset_index(name='Disciplinary Rate')
+        except:
+            import pdb; pdb.set_trace()
 
-        disciplinary_rate['year'] = disciplinary_rate['year'].astype(str)
         # Create a bar chart for all races across years
         chart = alt.Chart(disciplinary_rate).mark_bar().encode(
             x=alt.X('Race/Ethnicity:O', axis=None),
@@ -132,3 +108,44 @@ for tab, cat, cat_val in zip(tabs, categories, cat_values):
         chart2 = alt.layer(bar, tick).facet(column='year:N')
 
         st.write(chart2)
+
+        # TODO: check cambridge data not showing red bars for 2020
+        # TODO: create avg rate of disciplinary action
+        # TODO: breakdown impact of low income with % disability
+
+        if cat_val != 'all':
+            st.write("Impact of discipline on " + cat_val + " students in " + district + " district")
+            for year in df_filtered['year'].unique():
+                st.header(year)
+                df_year_filtered = df_filtered[df_filtered['year'] == year]
+                df_year_non_filtered = df_non_filtered[df_non_filtered['year'] == year]
+                # get percentage of category students disciplined
+                group_key = ['Race/Ethnicity']
+                category_disciplined_percentage = df_year_filtered.groupby(group_key).apply(lambda grp: get_filtered_counts(grp, categories_to_check, 'Total Disciplined'))/df_year_non_filtered.groupby(group_key).apply(lambda grp: get_filtered_counts(grp, categories_to_check, 'Total Disciplined', mode='sum')) * 100
+                category_disciplined_percentage = category_disciplined_percentage.reset_index(name='percentage_cat')
+                category_disciplined_percentage['sample'] = 'Disciplined'
+
+                # get percentage of category students in population
+                category_students_percentage = df_year_filtered.groupby(group_key).apply(lambda grp: get_filtered_counts(grp, categories_to_check, 'Total Eligible'))/df_year_non_filtered.groupby(group_key).apply(lambda grp: get_filtered_counts(grp, categories_to_check, 'Total Eligible', mode='sum')) * 100
+                category_students_percentage = category_students_percentage.reset_index(name='percentage_cat')
+                category_students_percentage['sample'] = 'Population'
+
+                # concatenate the two dataframes
+                concat_df = pd.concat([category_disciplined_percentage, category_students_percentage], axis=0)
+
+                bar = alt.Chart(concat_df).mark_bar().encode(
+                    color=alt.Color(
+                            'Race/Ethnicity:N',
+                        scale=alt.Scale(
+                            range = mapped_colors,
+                            domain = races
+                        )
+                    ),
+                    x='Race/Ethnicity',
+                    y='percentage_cat',
+                    column='sample:N'
+                ).properties(
+                    width=alt.Step(40)  # controls width of bar.
+                )
+
+                st.write(bar)
