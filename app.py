@@ -1,17 +1,47 @@
 import pandas as pd
 import streamlit as st
 import altair as alt
+from geopy.geocoders import GoogleV3
+import folium
 import numpy as np
 from utils import get_filtered_counts, mapped_colors, races
+import geopandas as gpd 
+
+# Load the Shapefile
+gdf = gpd.read_file('TOWNSSURVEY_POLY.shp')
+
+# Specify the geometry column
+geometry_column = "geometry"  
+
+# Create a GeoDataFrame with latitude and longitude columns
+# Here, we calculate the centroid of each polygon to get the approximate latitude and longitude
+gdf['latitude'] = gdf.centroid.y
+gdf['longitude'] = gdf.centroid.x
+
+# Create a Streamlit map using Folium
+st.subheader("Map")
+
+# Display the map using st.map() with latitude and longitude columns
+st.map(gdf[['latitude', 'longitude']], zoom=5, tile_provider="Stamen Terrain")
+
+
+# Add a sidebar for user interaction
+# selected_district = st.sidebar.selectbox('Select a District:', gdf['TOWN'].unique())
+# selected_district_geo = gdf[gdf['TOWN'] == selected_district]
+
 
 # Read in the data
 df = pd.read_csv("master.csv")
 
+
 districts = df['District Name'].unique()
 district = st.sidebar.selectbox('Select a district', districts)
 
+# Create a dropdown for selecting a school within the district
+selected_school = st.sidebar.selectbox('Select a School:', df[df['District Name'] == district]['School Name'].unique())
+
 # Filter the dataframe
-df = df[(df['District Name'] == district) & (df['School Name'] == district)]
+df = df[(df['District Name'] == district) & (df['School Name'] == selected_school)]
 
 df['year'] = df['year'].apply(lambda y: str(y-1) + '-' + str(y)[2:])
 
@@ -149,3 +179,6 @@ for tab, cat, cat_val in zip(tabs, categories, cat_values):
                 )
 
                 st.write(bar)
+    
+                 
+                

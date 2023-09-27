@@ -1,3 +1,4 @@
 streamlit
 pandas
 altair
+branca 0.3.1
