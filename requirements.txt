@@ -1,4 +1,10 @@
 streamlit
 pandas
 altair
-branca 0.3.1
+branca==0.3.1
+folium
+geopy
+geopandas
+streamlit-folium
+ipykernel
+notebook
