@@ -8,41 +8,6 @@ import numpy as np
 from utils import get_filtered_counts, mapped_colors, races
 import geopandas as gpd 
 
-# Load the Shapefile
-gdf = gpd.read_file('TOWNSSURVEY_POLY.shp')
-
-# import pdb; pdb.set_trace()
-
-# Specify the geometry column
-geometry_column = "geometry"  
-
-# Create a GeoDataFrame with latitude and longitude columns
-# Here, we calculate the centroid of each polygon to get the approximate latitude and longitude
-gdf['latitude'] = gdf.centroid.y
-gdf['longitude'] = gdf.centroid.x
-
-res = gdf.to_crs(epsg=4269)
-
-res['latitude'] = res.centroid.y
-res['longitude'] = res.centroid.x
-
-# Create a Streamlit map using Folium
-st.subheader("Map")
-
-# Display the map using st.map() with latitude and longitude columns
-st.map(data = res, latitude='latitude', longitude='longitude')
-
-st.write('another map')
-
-map_test = folium.Map(location=[res['latitude'].iloc[0], res['longitude'].iloc[0]],tiles="openstreetmap",   zoom_start=11)
-folium.GeoJson(data=res["geometry"]).add_to(map_test)
-out = st_folium(map_test, returned_objects=["last_object_clicked"])
-
-# Add a sidebar for user interaction
-# selected_district = st.sidebar.selectbox('Select a District:', gdf['TOWN'].unique())
-# selected_district_geo = gdf[gdf['TOWN'] == selected_district]
-
-
 # Read in the data
 df = pd.read_csv("master.csv")
 
