@@ -135,7 +135,7 @@ final_df2.columns = ['% Low income students in disabled group','% Low income in 
 races = df['Race/Ethnicity'].dropna().unique()
 selected_race = st.selectbox("Select the Race for intersectional analysis", races)
 df_upset = df.copy()
-df_upset = df_upset[df_upset['Race/Ethnicity'] == selected_race]
+df_upset = df_upset[(df_upset['Race/Ethnicity'] == selected_race) & (df_upset['Gender'].isnull())]
 df_upset['Students w/ Disabilities'] = df_upset['Students w/ Disabilities'].apply(lambda x: True if x == 'With Disability' else False)
 df_upset['English Learners'] = df_upset['English Learners'].apply(lambda x: True if x == 'English Learner' else False)
 df_upset['Low Income'] = df_upset['Low Income'].apply(lambda x: True if x == 'Low Income' else False)
