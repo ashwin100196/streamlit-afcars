@@ -24,11 +24,15 @@ year = st.sidebar.selectbox('Select a year', years)
 df = df[df['year'] == year]
 
 # Filter the DataFrame to include only rows where 'Gender' is null
-df = df[df['Gender'].isnull()]
+df = df[(df['Students w/ Disabilities'].isnull() ) & (df['Low Income'].isnull()) & (df['English Learners'].isnull())]
 
+def div_safe(x):
+    if x == 0:
+        return 1
+    return x
 # Group the data by 'Race/Ethnicity' and sum up 'Total Disciplined' and 'Total Eligible'
 grouped = df.groupby('Race/Ethnicity')[['Total Disciplined', 'Total Eligible']].sum()
-grouped['Disciplinary Rate'] = grouped['Total Disciplined'] / grouped['Total Eligible'] * 100
+grouped['Disciplinary Rate'] = grouped['Total Disciplined'] / grouped['Total Eligible'].apply(lambda x: div_safe(x)) * 100
 
 # Prepare the DataFrame for ANOVA test
 anova_df = pd.DataFrame()
@@ -36,13 +40,16 @@ anova_df = pd.DataFrame()
 # List to hold disciplinary rates for each group
 disciplinary_rates = []
 
+# import pdb; pdb.set_trace()
 # Obtain the disciplinary rates for each race and prepare the DataFrame
 for race in grouped.index:
     race_df = df[df['Race/Ethnicity'] == race]
     rates = race_df['Total Disciplined'] / race_df['Total Eligible']
     rates_dropna = rates.dropna()  # Drop NaN values
     disciplinary_rates.append(rates_dropna)  # Append the series of rates
+    print(disciplinary_rates)
     race_df = race_df.assign(Disciplinary_Rate=rates_dropna).dropna(subset=['Disciplinary_Rate'])
+    print(race_df)
     anova_df = pd.concat([anova_df, race_df[['Race/Ethnicity', 'Disciplinary_Rate']]], ignore_index=True)
 
 # Check that we have more than one rate to compare

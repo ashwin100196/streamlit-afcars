@@ -8,3 +8,6 @@ geopandas
 streamlit-folium
 ipykernel
 notebook
+scipy
+UpSetPlot
+seaborn

@@ -2,12 +2,7 @@ import pandas as pd
 import streamlit as st
 from PIL import Image
 import altair as alt
-from geopy.geocoders import GoogleV3
-import folium
-from streamlit_folium import st_folium
-import numpy as np
 from utils import get_filtered_counts, mapped_colors, races
-import geopandas as gpd 
 import os
 
 # Read in the data
@@ -19,77 +14,81 @@ if 'show_visuals' not in st.session_state:
 
 # Function to handle the button click
 def on_click():
-    st.session_state.show_visuals = True
+    st.session_state.show_visuals = not st.session_state.show_visuals
 
 # Main title and subtitle
 st.title("School to Prison Pipeline in Massachusetts")
-st.write("Exploring the Impact and Solutions")
 
 # Main layout container
 main_container = st.empty()
 
-# Inside the main container, layout your main page content
-with main_container:
-    
-    # Inject custom CSS with a script tag
-    st.markdown("""
-        <style>
-        .big-font {
-            font-size:20px !important;
-            color: #004d99;
-        }
-        .highlight {
-            background-color: #ffffcc;
-            border: 1px solid #ffcc00;
-            padding: 5px;
-        }
-        .split-bg {
-            background: linear-gradient(to right, black 50%, yellow 50%);
-        }
-        .image-border {
-            border-right: 2px solid #000; /* Border between images */
-        }
-        </style>
+if not st.session_state.show_visuals:
 
-        <script>
-        document.addEventListener('DOMContentLoaded', function(event) {
-            document.body.style.backgroundColor = '#e6f2ff';
-        });
-        </script>
-    """, unsafe_allow_html=True)
+    # Inside the main container, layout your main page content
+    with main_container.container():
+        st.write("Exploring the Impact and Solutions")
+        # Inject custom CSS with a script tag
+        st.markdown("""
+            <style>
+            .big-font {
+                font-size:20px !important;
+                color: #004d99;
+            }
+            .highlight {
+                background-color: #ffffcc;
+                border: 1px solid #ffcc00;
+                padding: 5px;
+            }
+            .split-bg {
+                background: linear-gradient(to right, black 50%, yellow 50%);
+            }
+            .image-border {
+                border-right: 2px solid #000; /* Border between images */
+            }
+            </style>
+                    
+            <script>
+            document.addEventListener('DOMContentLoaded', function(event) {
+                document.body.style.backgroundColor = '#e6f2ff';
+            });
+            </script>
+        """, unsafe_allow_html=True)
 
-    # Display Images with Border
-    col1, col2 = st.columns(2)
-    with col1:
-        if os.path.exists("2.png"):
-            image1 = Image.open("2.png")
-            st.image(image1, use_column_width=True)
-        else:
-            st.error("Image 2.png not found")
+        # Display Images with Border
+        col1, col2 = st.columns(2)
+        with col1:
+            if os.path.exists("2.png"):
+                image1 = Image.open("2.png")
+                st.image(image1, use_column_width=True)
+            else:
+                st.error("Image 2.png not found")
 
-    with col2:
-        if os.path.exists("3.png"):
-            image2 = Image.open("3.png")
-            st.image(image2, use_column_width=True)
-        else:
-            st.error("Image 3.png not found")
+        with col2:
+            if os.path.exists("3.png"):
+                image2 = Image.open("3.png")
+                st.image(image2, use_column_width=True)
+            else:
+                st.error("Image 3.png not found")
 
-    st.markdown('</div>', unsafe_allow_html=True)  # End of custom background
+        st.markdown('</div>', unsafe_allow_html=True)  # End of custom background
 
-# Insights on the School-Prison Pipeline
-st.markdown('<div class="big-font">The School-Prison Pipeline Phenomenon</div>', unsafe_allow_html=True)
-st.write("""
-    The School-Prison Pipeline refers to the disturbing national trend wherein children are funneled out of public schools and into the juvenile and criminal justice systems. Factors contributing to this include harsh school policies and practices, and an increased role of law enforcement in schools. These practices disproportionately affect disadvantaged students, particularly in minority communities, leading to significant social and educational ramifications.
-""")
+        # Insights on the School-Prison Pipeline
+        st.markdown('<div class="big-font">The School-Prison Pipeline Phenomenon</div>', unsafe_allow_html=True)
+        st.write("""
+            The School-Prison Pipeline refers to the disturbing national trend wherein children are funneled out of public schools and into the juvenile and criminal justice systems. Factors contributing to this include harsh school policies and practices, and an increased role of law enforcement in schools. These practices disproportionately affect disadvantaged students, particularly in minority communities, leading to significant social and educational ramifications.
+        """)
 
-st.markdown('<div class="highlight">Statistical Insights</div>', unsafe_allow_html=True)
-if st.button("Click here for some interactive visuals", on_click=on_click):
-    # Clear the main container when the button is clicked
-    main_container.empty()
+        st.button("Click here for interactive visuals", on_click=on_click)
 
 # Display content from Race.py when the button is clicked
 if st.session_state.show_visuals:
-   
+    col1, col5 = st.columns(2)
+
+    with col1:
+        st.write("Overview of disproportionality in discipline")
+    with col5 :
+        st.button("Click here to go back", on_click=on_click)
+    main_container.empty()
     districts = df['District Name'].unique()
     district = st.sidebar.selectbox('Select a district', districts)
 
